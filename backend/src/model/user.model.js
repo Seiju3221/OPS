@@ -5,12 +5,18 @@ const userSchema = new Schema({
   username: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
+  },
+  profileImg: {
+    type: String
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    lowercase: true
   },
   password: {
     type: String,
@@ -41,4 +47,4 @@ userSchema.methods.comparePassword = function (givenPassword) {
 }
 const User = model("User", userSchema);
 
-module.exports = User
+module.exports = User;

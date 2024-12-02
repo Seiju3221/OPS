@@ -1,37 +1,91 @@
-import { Outlet, Navigate } from 'react-router-dom';
-import './App.css';
+import React from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import useAuth from './hooks/useAuth';
 import Navbar from './components/Navbar';
-import useAuth from './hooks/useAuth'; // Assuming a custom hook for auth
+import Footer from './components/Footer';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-function App() {
-  const { isAuthenticated } = useAuth();
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
+
+const App = () => {
+  const { isAuthenticated, isLoading, authError, user } = useAuth();
+  const location = useLocation();
+
+  // Show loading state during authentication initialization
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-green-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-green-700 font-semibold">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Redirect Check:', {
+    isAuthenticated, 
+    isLoading, 
+    authError, 
+    currentPath: location.pathname
+  });
+
+  // Handle authentication errors
+  if (authError) {
+    return (
+      <>
+        {toast.error('You have to be logged in to access this page!')}
+        <Navigate to="/login" state={{ from: location.pathname }} replace />;
+      </>
+    )
+  }
+
+  const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
+
+  console.log('Redirect Check:', {
+    isAuthenticated, 
+    isLoading, 
+    authError, 
+    currentPath: location.pathname
+  });
+
+  // Redirect logic based on authentication and route
+  if (!isAuthenticated && !isPublicRoute) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  console.log('Redirect Check:', {
+    isAuthenticated, 
+    isLoading, 
+    authError, 
+    currentPath: location.pathname
+  });
+
+  if (isAuthenticated && isPublicRoute) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
-    <>
-      <div className="bg-bgPrimary min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-t from-white to-blue-50">
+      <ToastContainer />
       {isAuthenticated && (
+        <header className="sticky top-0 z-50 bg-blue-600 text-white shadow-lg">
           <Navbar />
-        )}
-        <div className="flex-grow">
-          {isAuthenticated ? (
-            <Outlet />
-          ) : (
-            <Navigate to="/login" replace />
-          )}
-        </div>
+        </header>
+      )}
 
-        <footer class="bg-white shadow m-4 ">
-        <div class="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
-          <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <a href="https://flowbite.com/" class="hover:underline">OPS</a>. All Rights Reserved.
-        </span>
-        <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
-        </ul>
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md border border-yellow-100 p-6 hover:shadow-xl transition-shadow duration-300">
+          <Outlet />
         </div>
-      </footer>
-
-      </div>
-    </>
-  );
-}
+      </main>
+      
+      {isAuthenticated && (
+        <Footer className="bg-yellow-100 text-blue-800 p-4" />
+      )}
+    </div>
+);
+};
 
 export default App;

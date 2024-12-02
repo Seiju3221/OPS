@@ -6,40 +6,54 @@ const isTokenPresentInCookies = () => {
   return !!token;
 };
 
-// Utility function to get the initial state from localStorage
-const loadUserFromLocalStorage = () => {
+// Utility function to get the initial state with persistent check
+const loadInitialState = () => {
   try {
-    if (!isTokenPresentInCookies()) {
-      localStorage.removeItem('user');
-      return { user: null };
-    }
+    const hasToken = isTokenPresentInCookies();
+    const serializedUser = localStorage.getItem('user');
+    const persistedAuth = localStorage.getItem('auth_state');
 
-    const serializedState = localStorage.getItem('user');
-    if (serializedState === null) return { user: null };
-    return { user: JSON.parse(serializedState) };
+    return {
+      user: serializedUser ? JSON.parse(serializedUser) : null,
+      isAuthenticated: hasToken && persistedAuth ? JSON.parse(persistedAuth).isAuthenticated : false,
+      initialized: false  // Start with initialized as false
+    };
   } catch (err) {
-    return { user: null };
+    console.error('Error loading initial auth state:', err);
+    return { user: null, isAuthenticated: false, initialized: false };
   }
 };
 
-const initialState = loadUserFromLocalStorage();
+const initialState = loadInitialState();
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: loadInitialState(),
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload.user;
-      // Save user state to localStorage
-      localStorage.setItem('user', JSON.stringify(state.user));
+      state.isAuthenticated = true;
+      state.initialized = true;
+      // Save both user and auth state
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      localStorage.setItem('auth_state', JSON.stringify({ isAuthenticated: true }));
     },
     logout: (state) => {
       state.user = null;
-      // Remove user from localStorage
+      state.isAuthenticated = false;
+      state.initialized = true;
+      // Clear both storages
       localStorage.removeItem('user');
+      localStorage.removeItem('auth_state');
     },
+    initializeAuth: (state) => {
+      state.initialized = true;
+    }
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, initializeAuth } = authSlice.actions;
+export const selectUser = (state) => state.auth.user;
+export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
+export const selectAuthInitialized = (state) => state.auth.initialized;
 export default authSlice.reducer;

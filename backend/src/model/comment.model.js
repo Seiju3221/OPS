@@ -15,12 +15,27 @@ const CommentSchema = new mongoose.Schema({
     ref: "Article",
     required: true
   },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }],
+  dislikes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }],
+  isEdited: {
+    type: Boolean,
+    default: false
+  },
+  editedAt: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
-})
+});
 
-const Comment = mongoose.model("Comment", CommentSchema)
+const Comment = mongoose.model("Comment", CommentSchema);
 
 module.exports = Comment;
