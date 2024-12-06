@@ -19,8 +19,8 @@ const POST_STATUS = {
 };
 
 const COLLEGES = [
-  'ETEEAP','OU','CCIT', 'CHS', 'CAS', 'CBAA', 'COE', 'CCJE', 'CTE',
-  'CPA', 'CSW', 'CHTM', 'COA', 'CFAD', 'CON', 'COM', 'CTECH',
+  'CAS', 'CBAA', 'CCIT', 'CCJE', 'CFAD', 'CHS', 'CHTM', 'CMED',
+  'CN', 'COA', 'COE', 'CPAD', 'CSW', 'CTE', 'CTECH', 'ETEEAP', 'OU',
 ];
 
 const CATEGORIES = [

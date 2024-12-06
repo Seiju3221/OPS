@@ -17,23 +17,8 @@ import {
 import { toast } from 'react-toastify';
 
 const COLLEGES = [
-  'ETEEAP',
-  'OU',
-  'CCIT',
-  'CHS',
-  'CAS',
-  'CBAA',
-  'COE',
-  'CCJE',
-  'CTE',
-  'CPA',
-  'CSW',
-  'CHTM',
-  'COA',
-  'CFAD',
-  'CON',
-  'COM',
-  'CTECH',
+  'CAS', 'CBAA', 'CCIT', 'CCJE', 'CFAD', 'CHS', 'CHTM', 'CMED',
+  'CN', 'COA', 'COE', 'CPAD', 'CSW', 'CTE', 'CTECH', 'ETEEAP', 'OU',
 ];
 
 const CATEGORIES = [
@@ -108,9 +93,18 @@ const UpdatePost = () => {
         placeholder: 'Start writing your article...'
       });
 
+      editorRef.current = editor;
+
       return () => {
-        editor.destroy();
-        editorRef.current = null;
+        // Add null check before destroying
+        if (editorRef.current) {
+          try {
+            editorRef.current.destroy();
+          } catch (error) {
+            console.warn('Error destroying editor:', error);
+          }
+          editorRef.current = null;
+        }
       };
     }
   }, [article.post]);

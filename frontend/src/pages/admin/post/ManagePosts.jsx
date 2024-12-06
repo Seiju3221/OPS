@@ -274,22 +274,23 @@ const ManagePost = () => {
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 appearance-none cursor-pointer"
           >
             <option value="">All Colleges</option>
-            <option value="OU">OU</option>
-            <option value="ETEEAP">ETEEAP</option>
-            <option value="CCIT">CCIT</option>
-            <option value="CHS">CHS</option>
             <option value="CAS">CAS</option>
             <option value="CBAA">CBAA</option>
-            <option value="COE">COE</option>
+            <option value="CCIT">CCIT</option>
             <option value="CCJE">CCJE</option>
-            <option value="CTE">CTE</option>
-            <option value="CPA">CPA</option>
-            <option value="CSW">CSW</option>
-            <option value="CHTM">CHTM</option>
-            <option value="COA">COA</option>
             <option value="CFAD">CFAD</option>
-            <option value="CON">CON</option>
+            <option value="CHS">CHS</option>
+            <option value="CHTM">CHTM</option>
+            <option value="CMED">CMED</option>
+            <option value="CN">CN</option>
+            <option value="COA">COA</option>
+            <option value="COE">COE</option>
+            <option value="CPAD">CPAD</option>
+            <option value="CSW">CSW</option>
+            <option value="CTE">CTE</option>
             <option value="CTECH">CTECH</option>
+            <option value="ETEEAP">ETEEAP</option>
+            <option value="OU">OU</option>
           </select>
         </div>
 
