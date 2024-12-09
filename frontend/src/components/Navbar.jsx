@@ -49,8 +49,6 @@ const Navbar = () => {
   const isAdmin = user?.role === "admin";
   const isWriter = user?.role === "writer";
 
-  console.log(user);
-
   // Close menu on location change
   useEffect(() => {
     setIsMenuOpen(false);
@@ -137,7 +135,7 @@ const Navbar = () => {
           </div>
 
           {/* Center Navigation - Hidden on mobile */}
-          <div className="hidden md:flex items-center justify-center flex-1 ml-8">
+          <div className="hidden lg:flex items-center justify-center flex-1 ml-8">
             <div className="flex items-center space-x-1">
               {navLists.map((item, index) => {
                 const Icon = item.icon;
@@ -245,7 +243,7 @@ const Navbar = () => {
                     )}
                     
                     {/* Mobile Navigation */}
-                    <div className="md:hidden">
+                    <div className="lg:hidden">
                       <ul className="space-y-1 mb-4 border-b border-gray-100 pb-4">
                         {navLists.map((item, index) => {
                           const Icon = item.icon;
@@ -336,24 +334,6 @@ const Navbar = () => {
       
       {/* Spacer div to prevent content overlap */}
       <div className="h-20" />
-
-      {/* Add these keyframes to your global CSS */}
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-slideIn {
-          animation: slideIn 0.2s ease-out forwards;
-        }
-      `}</style>
     </>
   );
 };

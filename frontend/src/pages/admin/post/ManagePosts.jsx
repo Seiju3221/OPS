@@ -5,6 +5,7 @@ import { formatDate } from '../../../utils/formatDate';
 import { MdModeEdit, MdDelete, MdSearch, MdFilterList, MdRefresh, MdAdd, MdCheckCircle, MdCancel, MdVisibility, MdCopyAll, MdArrowDropDown } from "react-icons/md";
 import { checkPlagiarism } from "../../../services/plagiarismService.js";
 import { toast } from 'react-toastify';
+import { ChevronDown, ChevronLeft, ChevronRight, Filter, Search, X, ChevronUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 
 const RichTextRenderer = ({ content }) => {
   const { blocks } = JSON.parse(content);
@@ -26,7 +27,12 @@ const sortOptions = [
   { id: 'oldest', label: 'Oldest First', sortBy: 'createdAt', order: 1 },
 ];
 
-const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
+const Pagination = ({ 
+  currentPage, 
+  totalPages, 
+  setCurrentPage,
+  className = ''
+}) => {
   if (totalPages <= 1) return null;
 
   const renderPageButtons = () => {
@@ -51,7 +57,11 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
     return pages.map((page, index) => {
       if (page === '...') {
         return (
-          <span key={`ellipsis-${index}`} className="px-3 py-1">
+          <span 
+            key={`ellipsis-${index}`} 
+            className="px-2 py-1 text-gray-500 select-none"
+            aria-hidden="true"
+          >
             ...
           </span>
         );
@@ -61,11 +71,15 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
         <button
           key={page}
           onClick={() => setCurrentPage(page)}
-          className={`px-3 py-1 rounded-lg border ${
-            currentPage === page
-              ? 'bg-blue-600 text-white border-blue-600'
-              : 'border-gray-300 hover:bg-gray-50'
-          }`}
+          aria-current={currentPage === page ? 'page' : undefined}
+          className={`
+            px-3 py-1 rounded-md text-sm font-medium 
+            transition-colors duration-200 ease-in-out
+            ${currentPage === page
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-300'
+            }
+          `}
         >
           {page}
         </button>
@@ -74,27 +88,48 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
   };
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-6 mb-8">
+    <nav 
+      aria-label="Pagination" 
+      className={`flex justify-center items-center space-x-2 ${className}`}
+    >
       <button
         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
         disabled={currentPage === 1}
-        className="px-3 py-1 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        aria-label="Previous page"
+        className="
+          p-2 rounded-md text-gray-600 
+          hover:bg-gray-100 disabled:opacity-50 
+          disabled:cursor-not-allowed 
+          transition-colors duration-200 ease-in-out
+          flex items-center justify-center
+        "
       >
-        Previous
+        <ChevronLeft className="h-5 w-5" />
       </button>
       
-      <div className="flex items-center gap-2">
+      <div 
+        className="flex items-center space-x-1" 
+        role="list" 
+        aria-label="Page numbers"
+      >
         {renderPageButtons()}
       </div>
       
       <button
         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        aria-label="Next page"
+        className="
+          p-2 rounded-md text-gray-600 
+          hover:bg-gray-100 disabled:opacity-50 
+          disabled:cursor-not-allowed 
+          transition-colors duration-200 ease-in-out
+          flex items-center justify-center
+        "
       >
-        Next
+        <ChevronRight className="h-5 w-5" />
       </button>
-    </div>
+    </nav>
   );
 };
 
@@ -198,243 +233,321 @@ const ManagePost = () => {
   const FilterSection = () => {
     const [searchValue, setSearchValue] = useState('');
     const searchTimeoutRef = useRef(null);
-
+    const sortRef = useRef(null);
+  
+    const colleges = [
+      { value: '', label: 'All Colleges' },
+      { value: 'CAS', label: 'College of Arts and Sciences' },
+      { value: 'CBAA', label: 'College of Business Administration and Accountancy' },
+      { value: 'CCIT', label: 'College of Computing and Information Technologies' },
+      { value: 'CCJE', label: 'College of Criminal Justice Education' },
+      { value: 'CFAD', label: 'College of Fine Arts and Design' },
+      { value: 'CHS', label: 'College of Health Sciences' },
+      { value: 'CHTM', label: 'College of Hospitality and Tourism Management', group: 'Hospitality' },
+      { value: 'CMED', label: 'College of Medicine' },
+      { value: 'CN', label: 'College of Nursing' },
+      { value: 'COA', label: 'College of Architecture' },
+      { value: 'COE', label: 'College of Engineering' },
+      { value: 'CPAD', label: 'College of Public Administration' },
+      { value: 'CSW', label: 'College of Social Work' },
+      { value: 'CTE', label: 'College of Teacher Education' },
+      { value: 'CTECH', label: 'College of Technology' },
+      { value: 'OU', label: 'Open University' },
+      { value: 'ETEEAP', label: 'Expanded Tertiary Education Equivalency and Accreditation Program' },
+    ];
+  
+    const categories = [
+      { value: '', label: 'All Categories' },
+      { value: 'Extension', label: 'Extension' },
+      { value: 'Introduction', label: 'Introduction' },
+      { value: 'Production', label: 'Production' },
+      { value: 'Training', label: 'Training' }
+    ];
+  
     const clearFilters = () => {
       setSearchValue('');
       setQuery(prev => ({ ...prev, search: '', college: '', category: '' }));
       setYear('');
     };
-
-    useEffect(() => {
-      return () => {
-        if (searchTimeoutRef.current) {
-          clearTimeout(searchTimeoutRef.current);
-        }
-      };
-    }, []);
-
-    useEffect(() => {
-      if (!query.search) {
-        setSearchValue('');
-      }
-    }, [query.search]);
-
+  
     const handleSearch = (e) => {
       const { value } = e.target;
       setSearchValue(value);
       
-      // Clear any existing timeout
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
   
-      // Set a new timeout to update the query
       searchTimeoutRef.current = setTimeout(() => {
         setQuery(prev => ({ ...prev, search: value }));
-      }, 1000);
+      }, 500);
     };
-
+  
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (!event.target.closest('.relative')) {
+        if (sortRef.current && !sortRef.current.contains(event.target)) {
           setIsSortOpen(false);
         }
       };
-    
-      if (isSortOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-      }
-    
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isSortOpen]);
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Search Input */}
-        <div className="relative">
-          <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          <input
-            type="text"
-            placeholder="Search posts..."
-            value={searchValue}
-            onChange={handleSearch}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50"
-          />
+  
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+  
+    const activeFiltersCount = [
+      query.search, 
+      query.college, 
+      query.category, 
+      year
+    ].filter(Boolean).length;
+  
+    return (
+      <div className="bg-white p-6 rounded-2xl shadow-md space-y-4 mb-8 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search Input */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search posts..."
+              value={searchValue}
+              onChange={handleSearch}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                bg-gray-50 text-sm transition-all duration-200"
+            />
+          </div>
+  
+          {/* College Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              value={query.college}
+              onChange={handleCollegeFilter}
+              className="w-full pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                bg-gray-50 text-sm appearance-none cursor-pointer"
+            >
+              {colleges.map(college => (
+                <option key={college.value} value={college.value}>
+                  {college.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+              <ChevronDown className="h-4 w-4" />
+            </div>
+          </div>
+  
+          {/* Category Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              value={query.category}
+              onChange={handleCategoryFilter}
+              className="w-full pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                bg-gray-50 text-sm appearance-none cursor-pointer"
+            >
+              {categories.map(category => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+              <ChevronDown className="h-4 w-4" />
+            </div>
+          </div>
+  
+          {/* Year Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              value={year}
+              onChange={handleYearChange}
+              className="w-full pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                bg-gray-50 text-sm appearance-none cursor-pointer"
+            >
+              <option value="">All Years</option>
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((yearOption) => (
+                <option key={yearOption} value={yearOption}>
+                  {yearOption}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+              <ChevronDown className="h-4 w-4" />
+            </div>
+          </div>
         </div>
-
-        {/* College Filter */}
-        <div className="relative">
-          <MdFilterList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          <select
-            value={query.college}
-            onChange={handleCollegeFilter}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 appearance-none cursor-pointer"
-          >
-            <option value="">All Colleges</option>
-            <option value="CAS">CAS</option>
-            <option value="CBAA">CBAA</option>
-            <option value="CCIT">CCIT</option>
-            <option value="CCJE">CCJE</option>
-            <option value="CFAD">CFAD</option>
-            <option value="CHS">CHS</option>
-            <option value="CHTM">CHTM</option>
-            <option value="CMED">CMED</option>
-            <option value="CN">CN</option>
-            <option value="COA">COA</option>
-            <option value="COE">COE</option>
-            <option value="CPAD">CPAD</option>
-            <option value="CSW">CSW</option>
-            <option value="CTE">CTE</option>
-            <option value="CTECH">CTECH</option>
-            <option value="ETEEAP">ETEEAP</option>
-            <option value="OU">OU</option>
-          </select>
-        </div>
-
-        {/* Category Filter */}
-        <div className="relative">
-          <MdFilterList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          <select
-            value={query.category}
-            onChange={handleCategoryFilter}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 appearance-none cursor-pointer"
-          >
-            <option value="">All Categories</option>
-            <option value="Extension">Extension</option>
-            <option value="Introduction">Introduction</option>
-            <option value="Production">Production</option>
-            <option value="Training">Training</option>
-          </select>
-        </div>
-
-        {/* Year Filter */}
-        <div className="relative">
-          <MdFilterList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          <select
-            value={year}
-            onChange={handleYearChange}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 appearance-none cursor-pointer"
-          >
-            <option value="">All Years</option>
-            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((yearOption) => (
-              <option key={yearOption} value={yearOption}>
-                {yearOption}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center mt-4">
-        <div className="flex gap-2">
-          {(query.search || query.college || query.category || year) && (
+  
+        <div className="flex justify-between items-center space-x-4">
+          {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 
+                bg-gray-100 hover:bg-gray-200 text-gray-700 
+                rounded-lg text-sm transition-colors group"
             >
+              <X className="h-4 w-4 text-gray-500 group-hover:text-gray-700" />
               Clear Filters
-              <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">
-                {[query.search, query.college, query.category, year].filter(Boolean).length}
+              <span className="bg-gray-200 group-hover:bg-gray-300 
+                px-2 py-0.5 rounded-full text-xs">
+                {activeFiltersCount}
               </span>
             </button>
           )}
-        </div>
-
-        <div className="relative inline-block text-left">
-          <button
-            type="button"
-            onClick={() => setIsSortOpen(!isSortOpen)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
-          >
-            <MdArrowDropDown className="text-gray-500" />
-            <span className="text-sm text-gray-700">
+  
+          <div className="relative" ref={sortRef}>
+            <button
+              onClick={() => setIsSortOpen(!isSortOpen)}
+              className="flex items-center gap-2 px-4 py-2 
+                bg-white border border-gray-200 rounded-lg 
+                hover:bg-gray-50 text-sm transition-colors"
+            >
               {sortOptions.find(option => option.id === sort)?.label || 'Sort by'}
-            </span>
-          </button>
-
-          {isSortOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSortOptionClick(option.id);
-                  }}
-                  className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors
-                    ${sort === option.id ? 'bg-gray-50 text-blue-600' : 'text-gray-700'}`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          )}
+              {isSortOpen ? (
+                <ChevronUp className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+  
+            {isSortOpen && (
+              <div className="absolute right-0 mt-2 w-48 
+                bg-white rounded-lg shadow-lg border border-gray-200 
+                py-1 z-10 overflow-hidden">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      handleSortOptionClick(option.id);
+                      setIsSortOpen(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm 
+                      transition-colors
+                      ${sort === option.id 
+                        ? 'bg-blue-50 text-blue-600' 
+                        : 'hover:bg-gray-50'}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-  const TableHeader = () => (
-    <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            Manage Posts
-            <span className="text-sm font-normal text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {filteredArticles?.length || 0} posts
-            </span>
-          </h1>
-          {total > 0 && (
-            <p className="text-sm text-gray-500 mt-1">
-              Showing {(currentPage - 1) * postsPerPage + 1} to {Math.min(currentPage * postsPerPage, total)} of {total} posts
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
+  const TableHeader = () => {
+    const publishedPostsCount = articles?.filter(a => a.status === 'published').length || 0;
+    const pendingPostsCount = articles?.filter(a => a.status === 'pending').length || 0;
+  
+    return (
+      <div className="bg-white p-6 rounded-2xl shadow-md space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              Manage Posts
+              <span className="text-sm font-normal text-gray-500 
+                bg-gray-100 px-3 py-1 rounded-full">
+                {filteredArticles?.length || 0} total
+              </span>
+            </h1>
+            {total > 0 && (
+              <p className="text-sm text-gray-500 mt-1.5">
+                Showing {(currentPage - 1) * postsPerPage + 1} 
+                {' '}to{' '}
+                {Math.min(currentPage * postsPerPage, total)} 
+                {' '}of {total} posts
+              </p>
+            )}
+          </div>
+          
           <button 
             onClick={refetch}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 text-gray-600 hover:text-gray-800 
+              hover:bg-gray-100 rounded-lg transition-colors 
+              focus:ring-2 focus:ring-blue-200"
           >
-            <MdRefresh className="text-xl" />
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+  
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleTabChange('published')}
+            className={`
+              flex items-center gap-2 px-4 py-2 text-sm font-medium 
+              rounded-lg transition-colors group
+              ${activeTab === 'published'
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-gray-600 hover:bg-gray-50'
+              }`}
+          >
+            <CheckCircle
+              className={`w-4 h-4 ${
+                activeTab === 'published' 
+                  ? 'text-blue-600' 
+                  : 'text-gray-400 group-hover:text-gray-600'
+              }`} 
+            />
+            Published Posts
+            <span className={`
+              ml-2 px-2 py-0.5 text-xs rounded-full 
+              ${activeTab === 'published'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {publishedPostsCount}
+            </span>
+          </button>
+          
+          <button
+            onClick={() => handleTabChange('pending')}
+            className={`
+              flex items-center gap-2 px-4 py-2 text-sm font-medium 
+              rounded-lg transition-colors group
+              ${activeTab === 'pending'
+                ? 'bg-yellow-50 text-yellow-600'
+                : 'text-gray-600 hover:bg-gray-50'
+              }`}
+          >
+            <Clock
+              className={`w-4 h-4 ${
+                activeTab === 'pending' 
+                  ? 'text-yellow-600' 
+                  : 'text-gray-400 group-hover:text-gray-600'
+              }`} 
+            />
+            Pending Approval
+            <span className={`
+              ml-2 px-2 py-0.5 text-xs rounded-full 
+              ${activeTab === 'pending'
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {pendingPostsCount}
+            </span>
           </button>
         </div>
       </div>
-
-      <div className="flex space-x-1 mb-6">
-        <button
-          onClick={() => handleTabChange('published')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === 'published'
-              ? 'bg-blue-50 text-blue-600'
-              : 'text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          Published Posts
-          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white">
-            {articles?.filter(a => a.status === 'published').length || 0}
-          </span>
-        </button>
-        <button
-          onClick={() => handleTabChange('pending')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === 'pending'
-              ? 'bg-blue-50 text-blue-600'
-              : 'text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          Pending Approval
-          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white">
-            {articles?.filter(a => a.status === 'pending').length || 0}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -851,7 +964,7 @@ const ManagePost = () => {
         <TableHeader />
         <FilterSection />
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-7">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="flex flex-col items-center gap-4">
@@ -861,16 +974,16 @@ const ManagePost = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Post Title</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted By</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted On</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <table className="w-full rounded-lg overflow-hidden shadow-sm">
+                <thead className="bg-blue-50 border-b-2 border-blue-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">No.</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Post Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Submitted By</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">College</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Submitted On</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
